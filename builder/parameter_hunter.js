@@ -28,8 +28,18 @@
 					//find the partial's name and retrieve it
 					var partialName = pMatch.match(/([\w\-\.\/~]+)/g)[0];
 					var partialPattern = pattern_assembler.get_pattern_by_key(partialName, patternlab);
+
 					//if we retrieved a pattern we should make sure that its extendedTemplate is reset. looks to fix #190
 					partialPattern.extendedTemplate = partialPattern.template;
+
+					//if a partial has parameters, we need to call findParamaters on it
+					if(partialPattern.parameteredPartials && partialPattern.parameteredPartials.length > 0){
+						if(patternlab.config.debug){
+							console.log('while evaluating ' + pattern.key + ' for  partialPatterns with parameters, determined ' + partialPattern.key + ' has parameters itself. resetting its template and calling findparameters on it');
+						}
+						//call find parameters recursively
+						findparameters(partialPattern, patternlab);
+					}
 
 					if(patternlab.config.debug){
 						console.log('found patternParameters for ' + partialName);
@@ -42,9 +52,10 @@
 					//if param keys are wrapped in single quotes, replace with double quotes.
 					var paramStringWellFormed = paramString.replace(/(')([^']+)(')(\s*\:)/g, '"$2"$4');
 					//if params keys are not wrapped in any quotes, wrap in double quotes.
-					var paramStringWellFormed = paramStringWellFormed.replace(/([\{|,]\s*)([^\s"'\:]+)(\s*\:)/g, '$1"$2"$3');
+
+					paramStringWellFormed = paramStringWellFormed.replace(/([\{|,]\s*)([^\:\s]+)(\s*\:)/gm, '$1"$2"$3');
 					//if param values are wrapped in single quotes, replace with double quotes.
-					var paramStringWellFormed = paramStringWellFormed.replace(/(\:\s*)(')([^']+)(')/g, '$1"$3"');
+					paramStringWellFormed = paramStringWellFormed.replace(/(\:\s*)(')([^']+)(')/gm, '$1"$3"');
 
 					var paramData = {};
 					var globalData = {};
